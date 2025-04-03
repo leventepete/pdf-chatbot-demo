@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF Chatbot – DEMO</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f3f3f3; }
+    #chat { height: 90vh; overflow-y: auto; padding: 10px; }
+    #inputArea { display: flex; padding: 10px; }
+    #userInput { flex: 1; padding: 8px; border: 1px solid #ccc; }
+    #sendBtn { padding: 8px 16px; background: orange; color: #fff; border: none; cursor: pointer; }
+    .bot { background: #ffe0b2; padding: 5px; border-radius: 5px; margin: 5px 0; }
+    .user { background: #c8e6c9; padding: 5px; border-radius: 5px; margin: 5px 0; }
+  </style>
+</head>
+<body>
+  <div id="chat"></div>
+  <div id="inputArea">
+    <input type="text" id="userInput" placeholder="Írj ide...">
+    <button id="sendBtn">Küldés</button>
+  </div>
+  <script>
+    let knowledge = [];
+    let log = [];
+
+    fetch('knowledge.json')
+      .then(res => res.json())
+      .then(data => { knowledge = data; });
+
+    fetch('interaction-log.json')
+      .then(res => res.json())
+      .then(data => { log = data; });
+
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('userInput');
+
+    function addMessage(text, sender) {
+      const msg = document.createElement('div');
+      msg.className = sender;
+      msg.textContent = text;
+      chat.appendChild(msg);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function saveLog() {
+      localStorage.setItem('interaction-log', JSON.stringify(log));
+    }
+
+    document.getElementById('sendBtn').onclick = () => {
+      const question = input.value.trim();
+      if (!question) return;
+      addMessage(question, 'user');
+
+      let answer = 'Elnézést, erre nincs válaszom.';
+      for (const item of knowledge) {
+        if (item.text.toLowerCase().includes(question.toLowerCase())) {
+          answer = item.text;
+          break;
+        }
+      }
+
+      addMessage(answer, 'bot');
+      log.push({ question, answer, time: new Date().toISOString() });
+      saveLog();
+
+      input.value = '';
+    }
+
+    // Betöltéskor visszatöltjük a local logot
+    window.onload = () => {
+      const storedLog = localStorage.getItem('interaction-log');
+      if (storedLog) {
+        log = JSON.parse(storedLog);
+      }
+    }
+  </script>
+</body>
+</html>

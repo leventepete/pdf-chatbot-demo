@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chatbot Napló – DEMO</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #fff; padding: 20px; }
+    h1 { color: #333; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Chatbot Kérdés-Válasz Napló</h1>
+  <table id="logTable">
+    <thead>
+      <tr><th>Időpont</th><th>Kérdés</th><th>Válasz</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <script>
+    let log = [];
+    const storedLog = localStorage.getItem('interaction-log');
+    if (storedLog) {
+      log = JSON.parse(storedLog);
+    }
+
+    const tbody = document.querySelector('#logTable tbody');
+    log.forEach(entry => {
+      const row = document.createElement('tr');
+      row.innerHTML = `<td>${entry.time}</td><td>${entry.question}</td><td>${entry.answer}</td>`;
+      tbody.appendChild(row);
+    });
+  </script>
+</body>
+</html>
