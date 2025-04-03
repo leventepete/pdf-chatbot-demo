@@ -1,0 +1,62 @@
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF → Knowledge.json Generátor</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; }
+    h1 { color: #333; }
+    #output { white-space: pre-wrap; background: #fff; padding: 10px; margin-top: 20px; border-radius: 10px; border: 1px solid #ccc; }
+    #download { margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>PDF → Knowledge.json Generátor</h1>
+  <input type="file" id="fileInput" accept="application/pdf">
+  <button id="download" disabled>Knowledge.json letöltése</button>
+  <div id="output"></div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const output = document.getElementById('output');
+    const downloadBtn = document.getElementById('download');
+    let knowledge = [];
+
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument(new Uint8Array(arrayBuffer)).promise;
+      knowledge = [];
+      let fullText = '';
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const strings = content.items.map(item => item.str).join(' ');
+        fullText += strings + ' ';
+      }
+
+      // Feldarabolás 800 karakteres darabokra
+      for (let i = 0; i < fullText.length; i += 800) {
+        knowledge.push({ text: fullText.slice(i, i + 800).trim() });
+      }
+
+      output.textContent = JSON.stringify(knowledge, null, 2);
+      downloadBtn.disabled = false;
+    });
+
+    downloadBtn.addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(knowledge, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'knowledge.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  </script>
+</body>
+</html>
