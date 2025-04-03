@@ -1,3 +1,13 @@
+// Mappa struktúra:
+// pdf-chatbot-demo/
+// ├── index.html
+// ├── log.html
+// ├── knowledge.json
+// ├── interaction-log.json
+// └── README.md
+
+// --- index.html ---
+
 <!DOCTYPE html>
 <html lang="hu">
 <head>
@@ -5,13 +15,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PDF Chatbot – DEMO</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f3f3f3; }
-    #chat { height: 90vh; overflow-y: auto; padding: 10px; }
-    #inputArea { display: flex; padding: 10px; }
-    #userInput { flex: 1; padding: 8px; border: 1px solid #ccc; }
-    #sendBtn { padding: 8px 16px; background: orange; color: #fff; border: none; cursor: pointer; }
-    .bot { background: #ffe0b2; padding: 5px; border-radius: 5px; margin: 5px 0; }
-    .user { background: #c8e6c9; padding: 5px; border-radius: 5px; margin: 5px 0; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f3f3f3; display: flex; flex-direction: column; height: 100vh; }
+    #chat { flex: 1; overflow-y: auto; padding: 10px; }
+    #inputArea { display: flex; padding: 10px; background: #fff; }
+    #userInput { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 5px; }
+    #sendBtn { padding: 8px 16px; background: orange; color: #fff; border: none; cursor: pointer; border-radius: 5px; margin-left: 5px; }
+    .bot { background: #ffe0b2; padding: 8px; border-radius: 10px; margin: 5px 0; display: flex; align-items: center; }
+    .user { background: #c8e6c9; padding: 8px; border-radius: 10px; margin: 5px 0; display: flex; align-items: center; }
+    .icon { margin-right: 8px; }
   </style>
 </head>
 <body>
@@ -28,17 +39,14 @@
       .then(res => res.json())
       .then(data => { knowledge = data; });
 
-    fetch('interaction-log.json')
-      .then(res => res.json())
-      .then(data => { log = data; });
-
     const chat = document.getElementById('chat');
     const input = document.getElementById('userInput');
 
     function addMessage(text, sender) {
       const msg = document.createElement('div');
       msg.className = sender;
-      msg.textContent = text;
+      const icon = sender === 'bot' ? '🤖' : '🧑';
+      msg.innerHTML = `<span class="icon">${icon}</span><span>${text}</span>`;
       chat.appendChild(msg);
       chat.scrollTop = chat.scrollHeight;
     }
@@ -47,27 +55,50 @@
       localStorage.setItem('interaction-log', JSON.stringify(log));
     }
 
-    document.getElementById('sendBtn').onclick = () => {
-      const question = input.value.trim();
-      if (!question) return;
-      addMessage(question, 'user');
-
+    function botReply(text) {
       let answer = 'Elnézést, erre nincs válaszom.';
       for (const item of knowledge) {
-        if (item.text.toLowerCase().includes(question.toLowerCase())) {
+        if (item.text.toLowerCase().includes(text.toLowerCase())) {
           answer = item.text;
           break;
         }
       }
-
-      addMessage(answer, 'bot');
-      log.push({ question, answer, time: new Date().toISOString() });
+      log.push({ question: text, answer, time: new Date().toISOString() });
       saveLog();
-
-      input.value = '';
+      typeMessage(answer, 'bot');
     }
 
-    // Betöltéskor visszatöltjük a local logot
+    function typeMessage(message, sender) {
+      let i = 0;
+      const interval = setInterval(() => {
+        if (i < message.length) {
+          const current = message.substring(0, i + 1);
+          if (chat.lastChild && chat.lastChild.className === sender) {
+            chat.lastChild.querySelector('span:last-child').textContent = current;
+          } else {
+            addMessage(current, sender);
+          }
+          i++;
+        } else {
+          clearInterval(interval);
+        }
+        chat.scrollTop = chat.scrollHeight;
+      }, 30);
+    }
+
+    function sendMessage() {
+      const question = input.value.trim();
+      if (!question) return;
+      addMessage(question, 'user');
+      input.value = '';
+      botReply(question);
+    }
+
+    document.getElementById('sendBtn').onclick = sendMessage;
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
     window.onload = () => {
       const storedLog = localStorage.getItem('interaction-log');
       if (storedLog) {
@@ -77,3 +108,4 @@
   </script>
 </body>
 </html>
+
