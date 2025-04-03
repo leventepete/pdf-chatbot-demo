@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="hu">
 <head>
   <meta charset="UTF-8">
@@ -7,13 +8,13 @@
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; }
     h1 { color: #333; }
-    #output { white-space: pre-wrap; background: #fff; padding: 10px; margin-top: 20px; border-radius: 10px; border: 1px solid #ccc; }
+    #output { white-space: pre-wrap; background: #fff; padding: 10px; margin-top: 20px; border-radius: 10px; border: 1px solid #ccc; max-height: 300px; overflow-y: auto; }
     #download { margin-top: 10px; }
   </style>
 </head>
 <body>
   <h1>PDF → Knowledge.json Generátor</h1>
-  <input type="file" id="fileInput" accept="application/pdf">
+  <input type="file" id="fileInput" accept="application/pdf" multiple>
   <button id="download" disabled>Knowledge.json letöltése</button>
   <div id="output"></div>
 
@@ -24,24 +25,27 @@
     let knowledge = [];
 
     fileInput.addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
+      const files = Array.from(e.target.files);
+      if (files.length === 0) return;
 
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument(new Uint8Array(arrayBuffer)).promise;
       knowledge = [];
-      let fullText = '';
+      output.textContent = 'Feldolgozás...';
 
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        const strings = content.items.map(item => item.str).join(' ');
-        fullText += strings + ' ';
-      }
+      for (const file of files) {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument(new Uint8Array(arrayBuffer)).promise;
+        let fullText = '';
 
-      // Feldarabolás 800 karakteres darabokra
-      for (let i = 0; i < fullText.length; i += 800) {
-        knowledge.push({ text: fullText.slice(i, i + 800).trim() });
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          const strings = content.items.map(item => item.str).join(' ');
+          fullText += strings + ' ';
+        }
+
+        for (let i = 0; i < fullText.length; i += 800) {
+          knowledge.push({ text: fullText.slice(i, i + 800).trim() });
+        }
       }
 
       output.textContent = JSON.stringify(knowledge, null, 2);
