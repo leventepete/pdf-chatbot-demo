@@ -22,6 +22,7 @@
     <input type="text" id="userInput" placeholder="Írj ide...">
     <button id="sendBtn">Küldés</button>
   </div>
+
   <script>
     let knowledge = [];
     let log = [];
@@ -34,6 +35,7 @@
 
     const chat = document.getElementById('chat');
     const input = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
 
     function addMessage(text, sender) {
       const msg = document.createElement('div');
@@ -47,6 +49,20 @@
 
     function saveLog() {
       localStorage.setItem('interaction-log', JSON.stringify(log));
+    }
+
+    function typeMessage(message, sender) {
+      const target = addMessage('', sender);
+      let i = 0;
+      const interval = setInterval(() => {
+        if (i < message.length) {
+          target.textContent += message[i];
+          i++;
+        } else {
+          clearInterval(interval);
+        }
+        chat.scrollTop = chat.scrollHeight;
+      }, 20);
     }
 
     function botReply(text) {
@@ -84,30 +100,15 @@
       }
     }
 
-    function typeMessage(message, sender) {
-      const target = addMessage('', sender);
-      let i = 0;
-      const interval = setInterval(() => {
-        if (i < message.length) {
-          target.textContent += message[i];
-          i++;
-        } else {
-          clearInterval(interval);
-        }
-        chat.scrollTop = chat.scrollHeight;
-      }, 20);
-    }
-
     function sendMessage() {
       const question = input.value.trim();
-      if (!question) return;
-      addMessage(question, 'user');
-      log.push({ question, answer: '', time: new Date().toISOString() });
-      input.value = '';
+      if (question.length === 0) return;
+      typeMessage(question, 'user');
       botReply(question);
+      input.value = '';
     }
 
-    document.getElementById('sendBtn').onclick = sendMessage;
+    sendBtn.addEventListener('click', sendMessage);
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') sendMessage();
     });
